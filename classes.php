@@ -1,10 +1,16 @@
 <?php
+$method="post";
+$hostName="localhost";
+$hostUsername="root";
+$hostPass="root";
 class Db{
     protected $conn;
-
     public function __construct() {
+        global $hostName;
+        global $hostUsername;
+        global $hostPass;
         try {
-            $this->conn = new PDO("mysql:host=localhost", "root", "root");
+            $this->conn = new PDO("mysql:host=$hostName", "$hostUsername", "$hostPass");
         } catch (PDOException $e) {
             die("DB ERROR1: " . $e->getMessage());
         }
@@ -46,7 +52,7 @@ CREATE TABLE IF NOT EXISTS Contents (
             die("DB ERROR: ". $e->getMessage());
         }
         try{
-            $sql="SELECT * FROM users WHERE id=:id";
+            $sql="SELECT * FROM Users WHERE id=:id";
             $prepare=$this->conn->prepare($sql);
             $prepare->execute([
                 'id' => 1
@@ -82,46 +88,59 @@ class Contents extends Db {
         $conn = $this->conn;
         if(empty($_GET['query'])){
             $sql=$conn->query("SELECT * FROM Contents ORDER BY id DESC");
-            $result=$sql->fetchAll(PDO::FETCH_ASSOC);
+            $results=$sql->fetchAll(PDO::FETCH_ASSOC);
 
-            if(empty($result)){
+            if(empty($results)){
                 echo "Unfortunate there is no content."." ". '<a href="create.php"> Would you like to add first content ?</a>';
+            }else{
+                return $results;
             }
 
         }else{
                 $query=$_GET['query'];
                 $sql=$conn->query("SELECT * FROM Contents WHERE header LIKE '%$query%' OR content LIKE '%$query%' OR publisher LIKE '%$query%' ORDER BY id DESC");
-                $result=$sql->fetchAll(PDO::FETCH_ASSOC);
+                $results=$sql->fetchAll(PDO::FETCH_ASSOC);
 
-                if(empty($result)){
+                if(empty($results)){
                     echo "Unfortunate there is no content you searched."." ". '<a href="create.php"> Would you like to add first content ?</a>';
+                }else{
+                    return $results;
                 }
         }
 
     }
-    public function create($header,$content,$publisher) {
-        $header=htmlspecialchars($header);
-        $content=htmlspecialchars($content);
-        $publisher=htmlspecialchars($publisher);
+    public function read() {
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
 
         $conn = $this->conn;
-        $sql=$conn->prepare("INSERT INTO Contents(header,content,oublisher) VALUES(?,?,?)");
-        $sql->execute([
-            $header,
-            $content,
-            $publisher
-        ]);
-        $result=$sql->fetchColumn(PDO::FETCH_ASSOC);
+        $sql = $conn->prepare("SELECT * FROM Contents WHERE id = :id");
+        $sql->execute(['id' => $id]);
 
-        if($result){
-            $success = true;
-        }else{
-            $success = false;
-        }
+        $results = $sql->fetch(PDO::FETCH_ASSOC);
+        return $results;
     }
+
+    public function create($header, $content, $publisher) {
+        $header = htmlspecialchars($header);
+        $content = htmlspecialchars($content);
+        $publisher = htmlspecialchars($publisher);
+
+        $conn = $this->conn;
+        $sql = $conn->prepare("INSERT INTO Contents(header, content, publisher) VALUES(?,?,?)");
+
+        $sql->execute([$header, $content, $publisher]);
+
+        if ($sql->rowCount() > 0) {
+                $lastUserId = $conn->lastInsertId();header("Location: read.php?id=$lastUserId");
+        } else {
+            echo "An error occurred. Please try later.";
+        }
+
+    }
+
     public function delete(){
         $id=htmlspecialchars($_GET['id']);
-        $conn = $this->getConnection();
+        $conn = $this->conn;
 
         $sql=$conn->prepare("SELECT * FROM Contents WHERE id=?");
         $sql->execute([
@@ -138,13 +157,9 @@ class Contents extends Db {
         $sql->execute([
             $id
         ]);
-        $result=$sql->fetchColumn();
 
-        if($result){
-            $success = true;
-        }else{
-            $success = false;
-        }
+        header("Location:index.php");
+
     }
     public function edit($header,$content,$publisher){
         $id=htmlspecialchars($_GET['id']);
@@ -205,12 +220,15 @@ class Users extends Db {
             if($passverfy){
                 session_start();
                 $_SESSION['id']=$results['id'];
-                if($cookie=1){
-                    setcookie($hour = time() + 3600 * 24 * 30);
+                $_SESSION['username']=$results['username'];
+
+                if($cookie==1){
+                    $hour = time() + 3600 * 24 * 30;
                     setcookie('username', $login, $hour);
                     setcookie('password', $password, $hour);
                 }
                 header("Location:index.php");
+                exit();
             }else{
                 echo "Password is wrong";
             }
@@ -226,7 +244,7 @@ class Users extends Db {
        }
         header("Location:index.php");
     }
-    public function Register($username,$name,$surname,$email,$password,$profile_pic,$role=1){
+    public function Register($username,$name,$surname,$email,$password,$profile_pic="",$role=1){
         $username=htmlspecialchars($username);
         $name=htmlspecialchars($name);
         $surname=htmlspecialchars($surname);
@@ -234,6 +252,9 @@ class Users extends Db {
         $password=htmlspecialchars($password);
         $role=htmlspecialchars($role);
         $profile_pic=htmlspecialchars($profile_pic);
+
+        //password hash
+        $password=password_hash($password,PASSWORD_BCRYPT);
 
         $conn = $this->conn;
         $sql=$conn->prepare("SELECT * FROM Users WHERE username=:username OR email=:email");
@@ -245,7 +266,7 @@ class Users extends Db {
 
 
         if($rows > 0){
-            echo "Böyle bir kullanıcı zaten var !";
+            echo "Already a user like this exists!";
             exit();
         }
 
@@ -259,18 +280,15 @@ class Users extends Db {
             ':role' => $role,
             ':profile_pic' => NULL
         ]);
-        $result=$sql->fetchAll(PDO::FETCH_ASSOC);
-        $lastuserid=$sql->lastInsertId();
-
-        if($result){
-            $success = true;
+        $lastuserid = $conn->lastInsertId();
+        if($lastuserid){
             session_start();
-            $_SESSION['id']=$lastuserid;
-
+            $_SESSION['id'] = $lastuserid;
+            echo "Welcome $username. You will redirected in 3 second...";
+            sleep(3);
             header("Location:index.php");
-        }else{
-            $success = false;
-            echo "Bir hata oluştu";
+        } else {
+            echo "Error !!! Please try later.";
         }
     }
     public function delete(){

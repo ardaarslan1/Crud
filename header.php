@@ -1,4 +1,9 @@
-<?php include "classes.php"?>
+<?php include "classes.php";
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+session_start();
+
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -12,13 +17,15 @@
 </head>
 <body>
 <a href="index.php">Main Page</a>
-<?php if(isset($_SESSION['id'])):?>
-<a href="login.php" style="float: right;">Login</a>
-<a href="register.php" style="float: right;">Register</a>
+<?php if(!isset($_SESSION['id'])):?>
+<a href="login.php" style="float: right; margin-left: 10px">Login </a>
+<a href="register.php" style="float: right;">Register </a>
 <?php endif;?>
 
-<?php if(!isset($_SESSION['id'])):?>
-    <a href="logout.php?id=<?=$_SESSION['id']?>" style="float: right;">Log Out</a>
+<?php if(isset($_SESSION['id'])):?>
+    <a href="/Crud/logout.php?id=<?=$_SESSION['id']?>" style="float: right;">Log Out</a>
+    <a href="/Crud/create.php" style="float: right;">New Post</a>
+
 <?php endif;?>
 
 <hr>
