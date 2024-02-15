@@ -137,7 +137,6 @@ class Contents extends Db {
         }
 
     }
-
     public function delete(){
         $id=htmlspecialchars($_GET['id']);
         $conn = $this->conn;
@@ -161,40 +160,33 @@ class Contents extends Db {
         header("Location:index.php");
 
     }
-    public function edit($header,$content,$publisher){
-        $id=htmlspecialchars($_GET['id']);
+    public function edit($header, $content, $publisher){
+        $id = htmlspecialchars($_GET['id']);
 
-        $conn = $this->getConnection();
-        $sql=$conn->prepare("SELECT * FROM Contents WHERE id=?");
-        $sql->execute([
-            $id
-        ]);
-        $rows=$sql->rowCount();
+        $conn = $this->conn;
+        $sql = $conn->prepare("SELECT * FROM Contents WHERE id=?");
+        $sql->execute([$id]);
+        $rows = $sql->rowCount();
 
-        if($rows = 0){
-            header("Location:index.php");
+        if ($rows == 0) {
+            header("Location: index.php");
             exit();
         }
 
-        $header=htmlspecialchars($header);
-        $content=htmlspecialchars($content);
-        $publisher=htmlspecialchars($publisher);
-
-        $conn = $this->getConnection();
-        $sql=$conn->prepare("UPDATE Contents SET header=:header, contents=:contents, publisher=:publisher");
-        $sql->execute([
+        $sql = $conn->prepare("UPDATE Contents SET header=:header, content=:content, publisher=:publisher WHERE id=:id");
+        $result = $sql->execute([
             "header" => $header,
-            "contents" => $content,
-           "publisher" => $publisher
+            "content" => $content,
+            "publisher" => $publisher,
+            "id" => $id
         ]);
-        $result=$sql->fetchColumn();
-
         if($result){
-            $success = true;
+            header("Location:read.php?id=$id");
         }else{
-            $success = false;
+            echo "An error occurred !";
         }
     }
+
 }
 class Users extends Db {
     public function __construct() {
@@ -220,6 +212,7 @@ class Users extends Db {
             if($passverfy){
                 session_start();
                 $_SESSION['id']=$results['id'];
+                $_SESSION['role']=$results['role'];
                 $_SESSION['username']=$results['username'];
 
                 if($cookie==1){
@@ -363,5 +356,6 @@ class Users extends Db {
             echo "Bir hata oluştu";
         }
     }
+
 }
 ?>

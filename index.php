@@ -11,10 +11,23 @@ $content->showContents();
 <?php if(!empty($content->showContents())):?>
 <?php foreach ($content->showContents() as $result):?>
 <?=$result["header"]?>
-<a href="read.php?id=<?=$result["id"]?>">[READ]</a>
-<a href="edit.php?id=<?=$result["id"]?>">[EDIT]</a>
-<a href="delete.php?id=<?=$result["id"]?>">[DELETE]</a><br><br>
+<a class="read" href="read.php?id=<?=$result["id"]?>">[READ]</a>
+<?php if(isset($result["publisher"])==isset($_SESSION["publisher"]) || isset($_SESSION["role"])==5):?>
+    <a class="edit" href="update.php?id=<?=$result["id"]?>">[EDIT]</a>
+    <a class="delete" href="delete.php?id=<?=$result["id"]?>">[DELETE]</a><br><br>
+<?php endif;?>
 
+        <?php if(isset($result["publisher"])!==isset($_SESSION["publisher"]) || isset($_SESSION["role"])!==5):?>
+            <br><br>
+        <?php endif;?>
 <?php endforeach;?>
 <?php endif;?>
+<script>
+    $(function() {
+        $('.delete').click(function() {
+            return window.confirm("Are you sure about that?");
+        });
+    });
+</script>
 <?php include "footer.php"?>
+
