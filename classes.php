@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS Users (
     username VARCHAR(255),
     name VARCHAR(255),
     surname VARCHAR(255),
-    email VARCHAR(255) UNIQUE,
+    email VARCHAR(255),
     password VARCHAR(255),
     role INT NOT NULL DEFAULT '1',
     profile_pic VARCHAR(255),
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS Contents (
 
             if($rowCount == 0){
                 $password=password_hash('admin',PASSWORD_BCRYPT);
-                $sql=$this->conn->prepare("INSERT INTO users(username, name, surname, email, password, role, profile_pic) VALUES(:username, :name, :surname, :email, :password, :role, :profile_pic)");
+                $sql=$this->conn->prepare("INSERT INTO Users(username, name, surname, email, password, role, profile_pic) VALUES(:username, :name, :surname, :email, :password, :role, :profile_pic)");
                 $sql->execute([
                     ':username' => 'admin',
                     ':name' => 'admin',
@@ -331,9 +331,9 @@ class Users extends Db {
         $password=password_hash($password,PASSWORD_BCRYPT);
 
 
-        $conn = $this->getConnection();
-        $sql=$conn->prepare("UPDATE Users SET username=:username, name=:name, surname=:surname, email=:email, password=:password, role=:role, profile_pic=:profile_pic)");
-        $sql->execute([
+        $conn = $this->conn;
+        $sql=$conn->prepare("UPDATE Users SET username=:username, name=:name, surname=:surname, email=:email, password=:password, role=:role, profile_pic=:profile_pic");
+        $result=$sql->execute([
             ':username' => $username,
             ':name' => $name,
             ':surname' => $surname,
@@ -342,11 +342,9 @@ class Users extends Db {
             ':role' => $role,
             ':profile_pic' => $profile_pic
         ]);
-        $result=$sql->fetchAll(PDO::FETCH_ASSOC);
 
         if($result){
-            $success = true;
-            header("Location:index.php");
+            echo "Your infos has been changed successfully";
         }else{
             $success = false;
             echo "Bir hata oluştu";
