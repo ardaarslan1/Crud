@@ -312,7 +312,7 @@ class Users extends Db {
         }
 
     }
-    public function edit($username,$name,$surname,$email,$password,$profile_pic,$role=1){
+    public function edit($username,$name,$surname,$email,$password,$profile_pic="",$role=1){
         $id=htmlspecialchars($_GET['id']);
 
         $conn = $this->conn;
@@ -327,13 +327,9 @@ class Users extends Db {
             exit();
         }
 
-        $username=htmlspecialchars($username);
-        $name=htmlspecialchars($name);
-        $surname=htmlspecialchars($surname);
-        $email=htmlspecialchars($email);
-        $password=htmlspecialchars($password);
-        $role=htmlspecialchars($role);
-        $profile_pic=htmlspecialchars($profile_pic);
+
+        $password=password_hash($password,PASSWORD_BCRYPT);
+
 
         $conn = $this->getConnection();
         $sql=$conn->prepare("UPDATE Users SET username=:username, name=:name, surname=:surname, email=:email, password=:password, role=:role, profile_pic=:profile_pic)");
@@ -355,6 +351,18 @@ class Users extends Db {
             $success = false;
             echo "Bir hata oluştu";
         }
+    }
+    public function showUser()
+    {
+        $id=htmlspecialchars($_GET['id']);
+        $conn = $this->conn;
+        $sql=$conn->prepare("SELECT * FROM Users WHERE id=:id");
+        $sql->execute([
+            ":id" => $id
+        ]);
+        $results=$sql->fetchAll(PDO::FETCH_ASSOC);
+
+        return $results;
     }
 
 }

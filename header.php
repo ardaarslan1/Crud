@@ -25,6 +25,7 @@ session_start();
 <?php if(isset($_SESSION['id'])):?>
     <a href="/Crud/logout.php?id=<?=$_SESSION['id']?>" style="float: right;">Log Out</a>
     <a href="/Crud/create.php" style="float: right;">New Post</a>
+    <a href="/Crud/update_user.php?id=<?=$_SESSION['id']?>" style="float: right;">Edit Profile</a>
 
 <?php endif;?>
 
